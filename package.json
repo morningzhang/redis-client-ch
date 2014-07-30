@@ -1,0 +1,33 @@
+{
+  "name": "redis-client-ch",
+  "version": "0.0.0",
+  "description": "A redis client with consistent hashing and zookeeper for HA",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/morningzhang/redis-client-ch"
+  },
+  "dependencies": {
+        "node-redis-failover": "",
+        "underscore":"",
+        "async":"",
+        "redis":"",
+        "node-zookeeper-client":""
+    },
+  "keywords": [
+    "redis",
+    "consistent",
+    "hashing",
+    "zookeeper",
+    "HA"
+  ],
+  "author": "morningzhang",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/morningzhang/redis-client-ch/issues"
+  },
+  "homepage": "https://github.com/morningzhang/redis-client-ch"
+}

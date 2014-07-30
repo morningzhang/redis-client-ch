@@ -1,0 +1,1 @@
+A redis client with consistent hashing and zookeeper for HA.
