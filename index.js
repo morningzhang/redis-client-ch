@@ -7,7 +7,7 @@ var redisFailover = require('node-redis-failover');
 var util=require('util');
 var EventEmitter = require('events').EventEmitter;
 
-var server={master:{},slave:{}},man;
+var server={master:{},slaves:[]},man;
 
 function DSPRedisManager(zkConfig){
     this.zkConfig=zkConfig;
@@ -49,7 +49,11 @@ DSPRedisManager.prototype.init=function(){
     function getServer(redisfl){
         var name=Object.keys(redisfl.redisState)[0];
         server.master=redisfl.getClient(name,'master');
-        server.slave=redisfl.getClient(name,'slave');
+        var len=redisfl.redisState[name].slaves.length;
+        for(var i=0;i<len;i++){
+            server.slaves.append(redisfl.getClient(name,'slave'));
+        }
+
     }
 };
 
@@ -76,10 +80,11 @@ DSPRedis.prototype.init=function(){
 
         readCommands.forEach(function(command){
             DSPRedis.prototype[command]=function(args, callback){
+                //todo radom
                 if (Array.isArray(args) && typeof callback === "function") {
-                     server.slave.send_command(command, args, callback);
+                     server.slaves.send_command(command, args, callback);
                 } else {
-                     server.slave.send_command(command, to_array(arguments));
+                     server.slaves.send_command(command, to_array(arguments));
                 }
             };
             DSPRedis.prototype[command.toUpperCase()] =  DSPRedis.prototype[command];
@@ -95,7 +100,6 @@ DSPRedis.prototype.init=function(){
             };
             DSPRedis.prototype[command.toUpperCase()] =  DSPRedis.prototype[command];
         });
-
 
 
         function to_array(args) {
