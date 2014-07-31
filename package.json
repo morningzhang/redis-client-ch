@@ -1,6 +1,6 @@
 {
   "name": "redis-client-ch",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "采用zk管理redis集群，写master，随机选取读slave",
   "main": "index.js",
   "scripts": {
