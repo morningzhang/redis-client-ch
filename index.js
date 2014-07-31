@@ -60,8 +60,11 @@ DSPRedisManager.prototype.init=function(){
 
 
 
-function DSPRedis(zkConfig){
+function DSPRedis(zkConfig,readCommands,writeCommands){
     this.zkConfig=zkConfig;
+    this.readCommands=readCommands;
+    this.writeCommands=writeCommands;
+
     this.init();
     EventEmitter.call(this);
 }
@@ -73,8 +76,8 @@ DSPRedis.prototype.init=function(){
     if(!man){
         man=new DSPRedisManager(this.zkConfig);
     }
-    var readCommands=['get','sinter','mget','hgetall'];
-    var writeCommands=['set','incr','incrby','decrby'];
+    var readCommands=self.readCommands||['get','sinter','mget','hgetall','ttl'];
+    var writeCommands=self.writeCommands||['set','incr','incrby','decrby','expire'];
 
 
     man.on('ok',function(){
@@ -130,15 +133,8 @@ DSPRedis.prototype.init=function(){
 };
 
 
-
-
-
-
-exports.getClient = function (zkConfig) {
-
-
-    var dspredis = new DSPRedis(zkConfig);
-
+exports.getClient = function (zkConfig,readCommands,writeCommands) {
+    var dspredis = new DSPRedis(zkConfig,readCommands,writeCommands);
     return dspredis;
 };
 
