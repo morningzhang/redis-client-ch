@@ -4,6 +4,7 @@
 'use strict';
 
 var redisFailover = require('node-redis-failover');
+var underscore=require('underscore');
 var util=require('util');
 var EventEmitter = require('events').EventEmitter;
 
@@ -73,18 +74,19 @@ DSPRedis.prototype.init=function(){
         man=new DSPRedisManager(this.zkConfig);
     }
     var readCommands=['get','sinter','mget','hgetall'];
-    var writeCommands=['set','incr','incrby','decrby','multi'];
+    var writeCommands=['set','incr','incrby','decrby'];
 
 
     man.on('ok',function(){
 
         readCommands.forEach(function(command){
             DSPRedis.prototype[command]=function(args, callback){
-                //todo radom
+                var rnd = underscore.random(0,server.slaves-1);
+                var slave=server.slaves[rnd];
                 if (Array.isArray(args) && typeof callback === "function") {
-                     server.slaves.send_command(command, args, callback);
+                    slave.send_command(command, args, callback);
                 } else {
-                     server.slaves.send_command(command, to_array(arguments));
+                    slave.send_command(command, to_array(arguments));
                 }
             };
             DSPRedis.prototype[command.toUpperCase()] =  DSPRedis.prototype[command];
