@@ -16,3 +16,6 @@ yredis.on('ok',function(){
     });
 
 });
+
+var underscore=require('underscore');
+console.log(underscore.random(0,1));

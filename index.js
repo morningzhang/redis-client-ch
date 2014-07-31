@@ -79,15 +79,25 @@ DSPRedis.prototype.init=function(){
 
     man.on('ok',function(){
 
+        if(server.master=={})return;
+
         readCommands.forEach(function(command){
             DSPRedis.prototype[command]=function(args, callback){
-                var rnd = underscore.random(0,server.slaves-1);
-                var slave=server.slaves[rnd];
+                var slaveNum=server.slaves.length,slave;
+                if(slaveNum>0){
+                    var rnd = underscore.random(0,slaveNum-1);
+                    slave=server.slaves[rnd];
+
+                }else{
+                    slave=server.master;
+                }
+
                 if (Array.isArray(args) && typeof callback === "function") {
                     slave.send_command(command, args, callback);
                 } else {
                     slave.send_command(command, to_array(arguments));
                 }
+
             };
             DSPRedis.prototype[command.toUpperCase()] =  DSPRedis.prototype[command];
         });
