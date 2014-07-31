@@ -19,8 +19,6 @@
     },
   "keywords": [
     "redis",
-    "consistent",
-    "hashing",
     "zookeeper",
     "HA"
   ],
