@@ -1,5 +1,6 @@
-A redis client with consistent hashing and zookeeper for HA.
-
+读写分离的包
+====
+```javascript
 var YRedis=require('../index');
 
 var yredis=YRedis.getClient({servers:'127.0.0.1:2181',chroot:'/'},['get','sinter','mget','hgetall','ttl'],['set','incr','incrby','decrby','expire']);
@@ -13,3 +14,4 @@ yredis.on('ok',function(){
     });
 
 });
+```
