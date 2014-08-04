@@ -1,7 +1,7 @@
 {
   "name": "redis-client-ch",
-  "version": "0.0.3",
-  "description": "采用zk管理redis集群，写master，随机选取读slave",
+  "version": "0.0.4",
+  "description": "use zookeeper mangage redis cluster and write to master and read from slave",
   "main": "index.js",
   "scripts": {
     "test": "test"

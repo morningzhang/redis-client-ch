@@ -52,7 +52,7 @@ DSPRedisManager.prototype.init=function(){
         server.master=redisfl.getClient(name,'master');
         var len=redisfl.redisState[name].slaves.length;
         for(var i=0;i<len;i++){
-            server.slaves.append(redisfl.getClient(name,'slave'));
+            server.slaves.push(redisfl.getClient(name,'slave'));
         }
 
     }
