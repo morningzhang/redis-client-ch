@@ -4,9 +4,9 @@ use zookeeper mangage redis cluster and write to master and read from slave
 ![Image text](http://raw.github.com/morningzhang/redis-client-ch/master/image/redis_ha_for_setting.png)
 
 
-So ,we should have a ping server,install like this:
-1.npm install -g node-redis-failover
-2.cd to bin and  ./redis-failover -c ../examples/config.json
+So ,we should have a ping server,install like this: <br/>
+1.npm install -g node-redis-failover <br/>
+2.cd to bin and  ./redis-failover -c ../examples/config.json <br/>
 
 In the client , use like this:
 
