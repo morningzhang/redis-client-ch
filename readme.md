@@ -1,8 +1,18 @@
-采用zk管理redis集群，写master，随机选取读slave
+
+use zookeeper mangage redis cluster and write to master and read from slave
 -------
+![Image text](http://raw.github.com/morningzhang/redis-client-ch/master/image/redis_ha_for_setting.png)
+
+
+So ,we should have a ping server,install like this:
+1.npm install -g node-redis-failover
+2.cd to bin and  ./redis-failover -c ../examples/config.json
+
+In the client , use like this:
+
 ```javascript
 var YRedis=require('../index');
-//三个参数，1。zk的配置，2。读的命令，3。写的命令
+//three parameters，1.zookeeper config，2.read commands，3.write command
 var yredis=YRedis.getClient({servers:'127.0.0.1:2181',chroot:'/'},['sinter','mget','hgetall','ttl'],['set','incr','incrby','decrby','expire']);
 
 yredis.on('ok',function(){
@@ -19,3 +29,4 @@ yredis.on('ok',function(){
 
 });
 ```
+
