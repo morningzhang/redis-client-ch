@@ -64,6 +64,7 @@ function DSPRedis(zkConfig,readCommands,writeCommands){
     this.zkConfig=zkConfig;
     this.readCommands=readCommands||[];
     this.writeCommands=writeCommands||[];
+    this.rr=0;
 
     this._init();
 
@@ -105,12 +106,14 @@ DSPRedis.prototype._init=function(){
     });
 };
 DSPRedis.prototype._initReadCommands=function(){
+    var self=this;
     this.readCommands.forEach(function(command){
         DSPRedis.prototype[command]=function(args, callback){
             var slaveNum=server.slaves.length,slave;
             if(slaveNum>0){
-                var rnd = underscore.random(0,slaveNum-1);
-                slave=server.slaves[rnd];
+                //var rnd = underscore.random(0,slaveNum-1);
+                self.rr=(self.rr+1)%slaveNum;
+                slave=server.slaves[self.rr];
 
             }else{
                 slave=server.master;
