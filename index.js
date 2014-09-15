@@ -145,7 +145,13 @@ DSPRedis.prototype._initWriteCommands=function(){
     });
 };
 
+DSPRedis.prototype.getMasterServer=function(){
+   return server.master;
+};
 
+DSPRedis.prototype.getSlaveServers=function(){
+    return server.slaves;
+};
 
 
 
