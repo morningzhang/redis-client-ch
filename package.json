@@ -1,6 +1,6 @@
 {
   "name": "redis-client-ch",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "use zookeeper mangage redis cluster and write to master and read from slave",
   "main": "index.js",
   "scripts": {

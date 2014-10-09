@@ -3,8 +3,7 @@
  */
 'use strict';
 
-var redisFailover = require('node-redis-failover');
-var underscore=require('underscore');
+var redisFailover = require('./client.js');
 var util=require('util');
 var EventEmitter = require('events').EventEmitter;
 
@@ -46,13 +45,12 @@ DSPRedisManager.prototype.init=function(){
         getServer(redisfl);
     });
 
-
-    function getServer(redisfl){
-        var name=Object.keys(redisfl.redisState)[0];
-        server.master=redisfl.getClient(name,'master');
-        var len=redisfl.redisState[name].slaves.length;
-        for(var i=0;i<len;i++){
-            server.slaves.push(redisfl.getClient(name,'slave'));
+    function getServer(redisfl) {
+        var name = Object.keys(redisfl.redisState)[0];
+        server.master = redisfl.getClient(name, 'master');
+        var len = redisfl.redisState[name].slaves.length;
+        for (var i = 0; i < len; i++) {
+            server.slaves.push(redisfl.getClient(name, 'slave'));
         }
 
     }
