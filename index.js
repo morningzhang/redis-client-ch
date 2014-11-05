@@ -85,10 +85,7 @@ DSPRedis.prototype._init=function(){
 
         if(servers.length==0)return;
         //init rr
-        var serversNum=servers.length;
-        for(var i=0;i<serversNum;i++){
-            self.rr[i]={slaves:0};
-        }
+        self._initRr();
         //init commands
         self._initReadCommands();
         self._initWriteCommands();
@@ -99,12 +96,13 @@ DSPRedis.prototype._init=function(){
 
             DSPRedis.prototype[addCommandMethod]=function(newCommands){
                 if(!newCommands)return;
-                var addedCommandPropNameTemp=addCommandMethod.split('add')[1];
-                var addedCommandPropName=addedCommandPropNameTemp[0].toLowerCase()+addedCommandPropNameTemp.substr(1);
-                var initCommandMethodName='_init'+addedCommandPropNameTemp;
+                var commands=[];
+                commands.concat(newCommands);
+                commands.forEach(function(command){
+                    var addCommandFunctionName='_'+addCommandMethod.substring(0,addCommandMethod.length-1);
+                    this[addCommandFunctionName](command);
+                });
 
-                this[addedCommandPropName]=this[addedCommandPropName].concat(newCommands);
-                this[initCommandMethodName]();
             };
 
         });
@@ -112,80 +110,100 @@ DSPRedis.prototype._init=function(){
         self.emit('ok');
     });
 };
+
+DSPRedis.prototype._initRr=function(){
+    var serversNum=servers.length;
+    for(var i=0;i<serversNum;i++){
+        this.rr[i]={slaves:0};
+    }
+};
+
 DSPRedis.prototype._initReadCommands=function(){
     var self=this;
     this.readCommands.forEach(function(command){
-        DSPRedis.prototype[command]=function(args, callback){
-            var sendArgs=[],sendCallback;
-            if (Array.isArray(args) && typeof callback === "function") {
-                sendArgs=args;
-                sendCallback=callback;
-            } else {
-                sendArgs=to_array(arguments);
-            }
-            var index=0;
-            if(!!self.keyDispatcher&&typeof self.keyDispatcher=='function'){
-                index=self.keyDispatcher(servers,command,sendArgs,sendCallback);
-                if(isNaN(index)||index>=servers.length||index<0){
-                    index=0;
-                }
-            }
-            var slaves=servers[index].slaves;
-            var slaveNum=slaves===undefined?0:slaves.length,slave,rr=self.rr[index].slaves;
-            if(slaveNum>0){
-                rr=(rr+1)%slaveNum;
-                slave=servers[index].slaves[rr];
-            }else{
-                slave=servers[index].master;
-            }
-
-            if (!!sendCallback) {
-                slave.send_command(command, sendArgs, sendCallback);
-            } else {
-                slave.send_command(command, sendArgs);
-            }
-
-        };
-        DSPRedis.prototype[command.toUpperCase()] =  DSPRedis.prototype[command];
+        self._addReadCommand(command);
     });
 };
 
+DSPRedis.prototype._addReadCommand=function(command){
+    var self = this;
+    DSPRedis.prototype[command] = function (args, callback) {
+        var sendArgs = [], sendCallback;
+        if (Array.isArray(args) && typeof callback === "function") {
+            sendArgs = args;
+            sendCallback = callback;
+        } else {
+            sendArgs = to_array(arguments);
+        }
+        var index = 0;
+        if (!!self.keyDispatcher && typeof self.keyDispatcher == 'function') {
+            index = self.keyDispatcher(servers, command, sendArgs, sendCallback);
+            if (isNaN(index) || index >= servers.length || index < 0) {
+                index = 0;
+            }
+        }
+        var slaves = servers[index].slaves;
+        var slaveNum = slaves === undefined ? 0 : slaves.length, slave, rr = self.rr[index].slaves;
+        if (slaveNum > 0) {
+            rr = (rr + 1) % slaveNum;
+            slave = servers[index].slaves[rr];
+        } else {
+            slave = servers[index].master;
+        }
 
+        if (!!sendCallback) {
+            slave.send_command(command, sendArgs, sendCallback);
+        } else {
+            slave.send_command(command, sendArgs);
+        }
+
+    };
+    DSPRedis.prototype[command.toUpperCase()] = DSPRedis.prototype[command];
+};
 
 DSPRedis.prototype._initWriteCommands=function(){
     var self=this;
     this.writeCommands.forEach(function(command){
-        DSPRedis.prototype[command]=function(args, callback){
-            var sendArgs=[],sendCallback;
-            if (Array.isArray(args) && typeof callback === "function") {
-                sendArgs=args;
-                sendCallback=callback;
-            } else {
-                sendArgs=to_array(arguments);
-            }
-            var index=0;
-            if(!!self.keyDispatcher&&typeof self.keyDispatcher=='function'){
-                index=self.keyDispatcher(servers,command,sendArgs,sendCallback);
-                if(isNaN(index)||index>=servers.length||index<0){
-                    index=0;
-                }
-            }
-
-            var master=servers[index].master;
-
-            if (!!sendCallback) {
-                master.send_command(command, sendArgs, sendCallback);
-            } else {
-                master.send_command(command, sendArgs);
-            }
-
-        };
-        DSPRedis.prototype[command.toUpperCase()] =  DSPRedis.prototype[command];
+       self._addWriteCommand(command);
     });
+};
+
+DSPRedis.prototype._addWriteCommand = function (command) {
+    var self = this;
+    DSPRedis.prototype[command] = function (args, callback) {
+        var sendArgs = [], sendCallback;
+        if (Array.isArray(args) && typeof callback === "function") {
+            sendArgs = args;
+            sendCallback = callback;
+        } else {
+            sendArgs = to_array(arguments);
+        }
+        var index = 0;
+        if (!!self.keyDispatcher && typeof self.keyDispatcher == 'function') {
+            index = self.keyDispatcher(servers, command, sendArgs, sendCallback);
+            if (isNaN(index) || index >= servers.length || index < 0) {
+                index = 0;
+            }
+        }
+
+        var master = servers[index].master;
+
+        if (!!sendCallback) {
+            master.send_command(command, sendArgs, sendCallback);
+        } else {
+            master.send_command(command, sendArgs);
+        }
+
+    };
+    DSPRedis.prototype[command.toUpperCase()] = DSPRedis.prototype[command];
 };
 
 DSPRedis.prototype.getServers=function(){
     return servers;
+};
+
+DSPRedis.prototype.setKeyDispatcher=function(keyDispatcher){
+    return this.keyDispatcher=keyDispatcher;
 };
 
 DSPRedis.prototype.getMasterServer=function(index){
