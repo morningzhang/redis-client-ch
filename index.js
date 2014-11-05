@@ -101,6 +101,7 @@ DSPRedis.prototype._init=function(){
                 commands.forEach(function(command){
                     var addCommandFunctionName='_'+addCommandMethod.substring(0,addCommandMethod.length-1);
                     this[addCommandFunctionName](command);
+                    return this;
                 });
 
             };
