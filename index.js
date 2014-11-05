@@ -231,6 +231,6 @@ function to_array(args) {
 
 
 exports.getClient = function (zkConfig,readCommands,writeCommands,keyDispatcher) {
-    var dspredis = new DSPRedis(zkConfig,readCommands,writeCommands,keyDispatcher);
+    var dspredis = new DSPRedis(zkConfig,readCommands||[],writeCommands||[],keyDispatcher);
     return dspredis;
 };
