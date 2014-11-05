@@ -5,6 +5,11 @@
 
 var YRedis=require('../index');
 
+//four parameters，
+//1.zookeeper config
+//2.read commands.it can be empty array
+//3.write command.it can be empty array
+//4.key router function
 var yredis=YRedis.getClient({servers:'172.20.0.47:2181',chroot:'/'},['sinter','mget','hgetall','ttl'],['set','incr','incrby','decrby','expire'],function(servers,command,sendArgs,sendCallback){
     var len=servers.length;
     if(sendArgs[1]){
@@ -27,6 +32,17 @@ yredis.on('ok',function(){
     yredis.get('aaa',function(err,r){
         console.log(err,r);
     });
+
+    yredis.SET('aa',12,function(err,r){
+        console.log(err,r);
+    });
+    yredis.decrby('aa',-1,function(err,r){
+        console.log(err,r);
+    });
+    yredis.get('aa',function(err,r){
+        console.log(err,r);
+    });
+
     //console.log(yredis.getServers());
     console.log(yredis.getMasterServer().name);
     var slaves= yredis.getSlaveServers()||[];

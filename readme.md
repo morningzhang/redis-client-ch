@@ -11,12 +11,26 @@ So ,we should have a ping server,install like this: <br/>
 In the client , use like this:
 
 ```javascript
+
 var YRedis=require('../index');
-//three parameters，1.zookeeper config，2.read commands，3.write command
-var yredis=YRedis.getClient({servers:'127.0.0.1:2181',chroot:'/'},['sinter','mget','hgetall','ttl'],['set','incr','incrby','decrby','expire']);
+//four parameters，
+//1.zookeeper config
+//2.read commands.it can be empty array
+//3.write command.it can be empty array
+//4.key router function
+var yredis=YRedis.getClient({servers:'172.20.0.47:2181',chroot:'/'},['sinter','mget','hgetall','ttl'],['set','incr','incrby','decrby','expire'],function(servers,command,sendArgs,sendCallback){
+    var len=servers.length;
+    if(sendArgs[1]){
+        var key=sendArgs[0];
+        var val=Buffer.byteLength(key, 'utf8')%len;
+        console.log('=>',key,val);
+        return val;
+    }
+    return 0;
+});
 
 yredis.on('ok',function(){
-    yredis.SET('aaa',1,function(err,r){
+    yredis.SET('aaa',12,function(err,r){
         console.log(err,r);
     });
     yredis.decrby('aaa',-1,function(err,r){
@@ -26,7 +40,24 @@ yredis.on('ok',function(){
     yredis.get('aaa',function(err,r){
         console.log(err,r);
     });
+    yredis.SET('aa',12,function(err,r){
+        console.log(err,r);
+    });
+    yredis.decrby('aa',-1,function(err,r){
+        console.log(err,r);
+    });
+    yredis.get('aa',function(err,r){
+        console.log(err,r);
+    });
 
+    //console.log(yredis.getServers());
+    console.log(yredis.getMasterServer().name);
+    var slaves= yredis.getSlaveServers()||[];
+
+    slaves.forEach(function(slave){
+        console.log(slave.name);
+    });
 });
+
 ```
 
