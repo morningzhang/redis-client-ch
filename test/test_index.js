@@ -3,13 +3,14 @@
  */
 
 
-var YRedis=require('../multi_partitions');
+var YRedis=require('../index');
 
 var yredis=YRedis.getClient({servers:'172.20.0.47:2181',chroot:'/'},['sinter','mget','hgetall','ttl'],['set','incr','incrby','decrby','expire'],function(servers,command,sendArgs,sendCallback){
     var len=servers.length;
     if(sendArgs[1]){
         var key=sendArgs[0];
         var val=Buffer.byteLength(key, 'utf8')%len;
+        console.log('=>',key,val);
         return val;
     }
     return 0;
