@@ -204,7 +204,8 @@ DSPRedis.prototype.getServers=function(){
 };
 
 DSPRedis.prototype.setKeyDispatcher=function(keyDispatcher){
-    return this.keyDispatcher=keyDispatcher;
+     this.keyDispatcher=keyDispatcher;
+     return this;
 };
 
 DSPRedis.prototype.getMasterServer=function(index){
