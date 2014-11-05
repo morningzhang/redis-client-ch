@@ -3,12 +3,20 @@
  */
 
 
-var YRedis=require('../index');
+var YRedis=require('../multi_partitions');
 
-var yredis=YRedis.getClient({servers:'172.20.0.47:2181,172.20.0.48:2181,172.20.0.49:2181',chroot:'/'},['sinter','mget','hgetall','ttl'],['set','incr','incrby','decrby','expire']);
+var yredis=YRedis.getClient({servers:'172.20.0.47:2181',chroot:'/'},['sinter','mget','hgetall','ttl'],['set','incr','incrby','decrby','expire'],function(servers,command,sendArgs,sendCallback){
+    var len=servers.length;
+    if(sendArgs[1]){
+        var key=sendArgs[0];
+        var val=Buffer.byteLength(key, 'utf8')%len;
+        return val;
+    }
+    return 0;
+});
 
 yredis.on('ok',function(){
-  /* yredis.SET('aaa',12,function(err,r){
+    yredis.SET('aaa',12,function(err,r){
         console.log(err,r);
     });
     yredis.decrby('aaa',-1,function(err,r){
@@ -17,10 +25,11 @@ yredis.on('ok',function(){
     yredis.addReadCommands('get');
     yredis.get('aaa',function(err,r){
         console.log(err,r);
-    });*/
-
+    });
+    //console.log(yredis.getServers());
     console.log(yredis.getMasterServer().name);
-    var slaves= yredis.getSlaveServers();
+    var slaves= yredis.getSlaveServers()||[];
+
     slaves.forEach(function(slave){
         console.log(slave.name);
     });
@@ -28,5 +37,5 @@ yredis.on('ok',function(){
 });
 
 /*
-var underscore=require('underscore');
-console.log(underscore.random(0,1));*/
+ var underscore=require('underscore');
+ console.log(underscore.random(0,1));*/

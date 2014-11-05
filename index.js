@@ -7,7 +7,7 @@ var redisFailover = require('./client.js');
 var util=require('util');
 var EventEmitter = require('events').EventEmitter;
 
-var server={master:{},slaves:[]},man;
+var servers=[];
 
 function DSPRedisManager(zkConfig){
     this.zkConfig=zkConfig;
@@ -46,26 +46,29 @@ DSPRedisManager.prototype.init=function(){
     });
 
     function getServer(redisfl) {
-        var name = Object.keys(redisfl.redisState)[0];
-        server.master = redisfl.getClient(name, 'master');
-        var len = redisfl.redisState[name].slaves.length;
-        for (var i = 0; i < len; i++) {
-            server.slaves.push(redisfl.getClient(name, 'slave'));
-        }
-
+        var names = Object.keys(redisfl.redisState);
+        names.forEach(function(name){
+            var server={};
+            server.master = redisfl.getClient(name, 'master');
+            var len = redisfl.redisState[name].slaves.length;
+            for (var i = 0; i < len; i++) {
+                server.slaves.push(redisfl.getClient(name, 'slave'));
+            }
+            servers.push(server);
+        });
+        //console.log(servers);
     }
 };
 
 
-
-function DSPRedis(zkConfig,readCommands,writeCommands){
+var man;
+function DSPRedis(zkConfig,readCommands,writeCommands,keyDispatcher){
     this.zkConfig=zkConfig;
     this.readCommands=readCommands||[];
     this.writeCommands=writeCommands||[];
-    this.rr=0;
-
+    this.keyDispatcher=keyDispatcher;
+    this.rr=[];
     this._init();
-
     EventEmitter.call(this);
 }
 util.inherits(DSPRedis, EventEmitter);
@@ -80,7 +83,13 @@ DSPRedis.prototype._init=function(){
 
     man.on('ok',function(){
 
-        if(server.master=={})return;
+        if(servers.length==0)return;
+        //init rr
+        var serversNum=servers.length;
+        for(var i=0;i<serversNum;i++){
+            self.rr[i]={slaves:0};
+        }
+        //init commands
         self._initReadCommands();
         self._initWriteCommands();
 
@@ -107,20 +116,33 @@ DSPRedis.prototype._initReadCommands=function(){
     var self=this;
     this.readCommands.forEach(function(command){
         DSPRedis.prototype[command]=function(args, callback){
-            var slaveNum=server.slaves.length,slave;
+            var sendArgs=[],sendCallback;
+            if (Array.isArray(args) && typeof callback === "function") {
+                sendArgs=args;
+                sendCallback=callback;
+            } else {
+                sendArgs=to_array(arguments);
+            }
+            var index=0;
+            if(!!self.keyDispatcher&&typeof self.keyDispatcher=='function'){
+                index=self.keyDispatcher(servers,command,sendArgs,sendCallback);
+                if(isNaN(index)||index>=servers.length||index<0){
+                    index=0;
+                }
+            }
+            var slaves=servers[index].slaves;
+            var slaveNum=slaves===undefined?0:slaves.length,slave,rr=self.rr[index].slaves;
             if(slaveNum>0){
-                //var rnd = underscore.random(0,slaveNum-1);
-                self.rr=(self.rr+1)%slaveNum;
-                slave=server.slaves[self.rr];
-
+                rr=(rr+1)%slaveNum;
+                slave=servers[index].slaves[rr];
             }else{
-                slave=server.master;
+                slave=servers[index].master;
             }
 
-            if (Array.isArray(args) && typeof callback === "function") {
-                slave.send_command(command, args, callback);
+            if (!!sendCallback) {
+                slave.send_command(command, sendArgs, sendCallback);
             } else {
-                slave.send_command(command, to_array(arguments));
+                slave.send_command(command, sendArgs);
             }
 
         };
@@ -131,24 +153,49 @@ DSPRedis.prototype._initReadCommands=function(){
 
 
 DSPRedis.prototype._initWriteCommands=function(){
+    var self=this;
     this.writeCommands.forEach(function(command){
         DSPRedis.prototype[command]=function(args, callback){
+            var sendArgs=[],sendCallback;
             if (Array.isArray(args) && typeof callback === "function") {
-                server.master.send_command(command, args, callback);
+                sendArgs=args;
+                sendCallback=callback;
             } else {
-                server.master.send_command(command, to_array(arguments));
+                sendArgs=to_array(arguments);
             }
+            var index=0;
+            if(!!self.keyDispatcher&&typeof self.keyDispatcher=='function'){
+                index=self.keyDispatcher(servers,command,sendArgs,sendCallback);
+                if(isNaN(index)||index>=servers.length||index<0){
+                    index=0;
+                }
+            }
+
+            var master=servers[index].master;
+
+            if (!!sendCallback) {
+                master.send_command(command, sendArgs, sendCallback);
+            } else {
+                master.send_command(command, sendArgs);
+            }
+
         };
         DSPRedis.prototype[command.toUpperCase()] =  DSPRedis.prototype[command];
     });
 };
 
-DSPRedis.prototype.getMasterServer=function(){
-   return server.master;
+DSPRedis.prototype.getServers=function(){
+    return servers;
 };
 
-DSPRedis.prototype.getSlaveServers=function(){
-    return server.slaves;
+DSPRedis.prototype.getMasterServer=function(index){
+    index = index === undefined ? 0 : index;
+    return servers[index].master;
+};
+
+DSPRedis.prototype.getSlaveServers=function(index){
+    index = index === undefined ? 0 : index;
+    return servers[index].slaves;
 };
 
 
@@ -156,21 +203,16 @@ DSPRedis.prototype.getSlaveServers=function(){
 function to_array(args) {
     var len = args.length,
         arr = new Array(len), i;
-
     for (i = 0; i < len; i += 1) {
         arr[i] = args[i];
     }
-
     return arr;
 }
 
 
 
 
-exports.getClient = function (zkConfig,readCommands,writeCommands) {
-    var dspredis = new DSPRedis(zkConfig,readCommands,writeCommands);
+exports.getClient = function (zkConfig,readCommands,writeCommands,keyDispatcher) {
+    var dspredis = new DSPRedis(zkConfig,readCommands,writeCommands,keyDispatcher);
     return dspredis;
 };
-
-
-
