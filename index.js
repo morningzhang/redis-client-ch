@@ -97,13 +97,13 @@ DSPRedis.prototype._init=function(){
             DSPRedis.prototype[addCommandMethod]=function(newCommands){
                 if(!newCommands)return;
                 var commands=[];
-                commands.concat(newCommands);
+                commands=commands.concat(newCommands);
+                var self=this;
                 commands.forEach(function(command){
                     var addCommandFunctionName='_'+addCommandMethod.substring(0,addCommandMethod.length-1);
-                    this[addCommandFunctionName](command);
-                    return this;
+                    self[addCommandFunctionName](command);
                 });
-
+                return this;
             };
 
         });

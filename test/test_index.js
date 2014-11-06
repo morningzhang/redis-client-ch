@@ -10,25 +10,26 @@ var YRedis=require('../index');
 //2.read commands.it can be empty array
 //3.write command.it can be empty array
 //4.key router function
-var yredis=YRedis.getClient({servers:'172.20.0.47:2181',chroot:'/'},['sinter','mget','hgetall','ttl'],['set','incr','incrby','decrby','expire'],function(servers,command,sendArgs,sendCallback){
-    var len=servers.length;
-    if(sendArgs[0]){
-        var key=sendArgs[0];
-        var val=Buffer.byteLength(key, 'utf8')%len;
-        console.log('=>',key,val);
-        return val;
-    }
-    return 0;
-});
+var yredis=YRedis.getClient({servers:'172.20.0.47:2181',chroot:'/'});
 
 yredis.on('ok',function(){
+    yredis.addReadCommands(['get','sinter','mget','hgetall','ttl']).addWriteCommands(['set','incr','incrby','decrby','expire']).setKeyDispatcher(function(servers,command,sendArgs,sendCallback){
+        var len=servers.length;
+        if(sendArgs[0]){
+            var key=sendArgs[0];
+            var val=Buffer.byteLength(key, 'utf8')%len;
+            console.log('=>',key,val);
+            return val;
+        }
+        return 0;
+    });
     yredis.SET('aaa',12,function(err,r){
         console.log(err,r);
     });
     yredis.decrby('aaa',-1,function(err,r){
         console.log(err,r);
     });
-    yredis.addReadCommands('get');
+
     yredis.get('aaa',function(err,r){
         console.log(err,r);
     });
@@ -42,6 +43,7 @@ yredis.on('ok',function(){
     yredis.get('aa',function(err,r){
         console.log(err,r);
     });
+
 
     //console.log(yredis.getServers());
     console.log(yredis.getMasterServer().name);
