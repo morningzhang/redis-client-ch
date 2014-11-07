@@ -22,10 +22,16 @@ Client.prototype.setState = function(name, state, callback) {
                 self.addClient(state.master, state.password, function () {
                     cb(null, 1);
                 });
+            }else{
+                cb(null, 0);
             }
         },
         function (n, cb) {
             if (state.slaves) {
+                if(state.slaves.length==0){
+                    cb(null,n);
+                    return;
+                }
                 var slaveSize=0;
                 async.eachSeries(state.slaves, function (name, cb1) {
                     self.addClient(name, state.password, function(){
@@ -38,6 +44,8 @@ Client.prototype.setState = function(name, state, callback) {
                         cb(null,n+slaveSize);
                     }
                 });
+            }else{
+                cb(null,n);
             }
         }
 
