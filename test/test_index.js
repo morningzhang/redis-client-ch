@@ -10,7 +10,7 @@ var YRedis=require('../index');
 //2.read commands.it can be empty array
 //3.write command.it can be empty array
 //4.key router function
-var yredis=YRedis.getClient({servers:'172.20.0.47:2181',chroot:'/'});
+var yredis=YRedis.getClient({servers:'172.20.0.47:2181',chroot:'/qa-test'});
 
 yredis.on('ok',function(){
     yredis.addReadCommands(['get','sinter','mget','hgetall','ttl']).addWriteCommands(['set','incr','incrby','decrby','expire']).setKeyDispatcher(function(servers,command,sendArgs,sendCallback){

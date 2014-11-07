@@ -51,9 +51,14 @@ DSPRedisManager.prototype.init=function(){
             var server={};
             server.master = redisfl.getClient(name, 'master');
             var len = redisfl.redisState[name].slaves.length;
-            for (var i = 0; i < len; i++) {
-                server.slaves.push(redisfl.getClient(name, 'slave'));
+            if(len>0){
+                server.slaves=[];
+                for (var i = 0; i < len; i++) {
+                    var slave=redisfl.getClient(name, 'slave');
+                    server.slaves.push(slave);
+                }
             }
+
             servers.push(server);
         });
         //console.log(servers);
