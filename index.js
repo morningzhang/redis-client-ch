@@ -7,10 +7,11 @@ var redisFailover = require('./client.js');
 var util=require('util');
 var EventEmitter = require('events').EventEmitter;
 
-var servers=[];
+
 
 function DSPRedisManager(zkConfig){
     this.zkConfig=zkConfig;
+    this.servers=[];
     this.init();
     EventEmitter.call(this);
 }
@@ -59,19 +60,23 @@ DSPRedisManager.prototype.init=function(){
                 }
             }
 
-            servers.push(server);
+            self.servers.push(server);
         });
         //console.log(servers);
     }
 };
 
+DSPRedisManager.prototype.getServers=function(){
+    return this.servers;
+};
 
-var man;
 function DSPRedis(zkConfig,readCommands,writeCommands,keyDispatcher){
     this.zkConfig=zkConfig;
     this.readCommands=readCommands||[];
     this.writeCommands=writeCommands||[];
     this.keyDispatcher=keyDispatcher;
+
+    this.manager=new DSPRedisManager(zkConfig);
     this.rr=[];
     this._init();
     EventEmitter.call(this);
@@ -81,14 +86,9 @@ util.inherits(DSPRedis, EventEmitter);
 DSPRedis.prototype._init=function(){
     var self=this;
 
-    if(!man) {
-        man = new DSPRedisManager(this.zkConfig);
-    }
+    this.manager.on('ok',function(){
 
-
-    man.on('ok',function(){
-
-        if(servers.length==0)return;
+        if(this.getServers().length==0)return;
         //init rr
         self._initRr();
         //init commands
@@ -118,7 +118,7 @@ DSPRedis.prototype._init=function(){
 };
 
 DSPRedis.prototype._initRr=function(){
-    var serversNum=servers.length;
+    var serversNum=this.getServers().length;
     for(var i=0;i<serversNum;i++){
         this.rr[i]={slaves:0};
     }
@@ -143,18 +143,18 @@ DSPRedis.prototype._addReadCommand=function(command){
         }
         var index = 0;
         if (!!self.keyDispatcher && typeof self.keyDispatcher == 'function') {
-            index = self.keyDispatcher(servers, command, sendArgs, sendCallback);
-            if (isNaN(index) || index >= servers.length || index < 0) {
+            index = self.keyDispatcher(this.getServers(), command, sendArgs, sendCallback);
+            if (isNaN(index) || index >= this.getServers().length || index < 0) {
                 index = 0;
             }
         }
-        var slaves = servers[index].slaves;
+        var slaves = this.getServers()[index].slaves;
         var slaveNum = slaves === undefined ? 0 : slaves.length, slave, rr = self.rr[index].slaves;
         if (slaveNum > 0) {
             rr = (rr + 1) % slaveNum;
-            slave = servers[index].slaves[rr];
+            slave = this.getServers()[index].slaves[rr];
         } else {
-            slave = servers[index].master;
+            slave = this.getServers()[index].master;
         }
 
         if (!!sendCallback) {
@@ -186,13 +186,13 @@ DSPRedis.prototype._addWriteCommand = function (command) {
         }
         var index = 0;
         if (!!self.keyDispatcher && typeof self.keyDispatcher == 'function') {
-            index = self.keyDispatcher(servers, command, sendArgs, sendCallback);
-            if (isNaN(index) || index >= servers.length || index < 0) {
+            index = self.keyDispatcher(this.getServers(), command, sendArgs, sendCallback);
+            if (isNaN(index) || index >= this.getServers().length || index < 0) {
                 index = 0;
             }
         }
 
-        var master = servers[index].master;
+        var master = this.getServers()[index].master;
 
         if (!!sendCallback) {
             master.send_command(command, sendArgs, sendCallback);
@@ -205,7 +205,7 @@ DSPRedis.prototype._addWriteCommand = function (command) {
 };
 
 DSPRedis.prototype.getServers=function(){
-    return servers;
+    return this.manager.getServers();
 };
 
 DSPRedis.prototype.setKeyDispatcher=function(keyDispatcher){
@@ -215,12 +215,12 @@ DSPRedis.prototype.setKeyDispatcher=function(keyDispatcher){
 
 DSPRedis.prototype.getMasterServer=function(index){
     index = index === undefined ? 0 : index;
-    return servers[index].master;
+    return this.getServers()[index].master;
 };
 
 DSPRedis.prototype.getSlaveServers=function(index){
     index = index === undefined ? 0 : index;
-    return servers[index].slaves;
+    return this.getServers()[index].slaves;
 };
 
 

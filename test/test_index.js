@@ -24,35 +24,48 @@ yredis.on('ok',function(){
         return 0;
     });
     yredis.SET('aaa',12,function(err,r){
-        console.log(err,r);
+        console.log('aaa',err,r);
     });
     yredis.decrby('aaa',-1,function(err,r){
-        console.log(err,r);
+        console.log('aaa',err,r);
     });
 
     yredis.get('aaa',function(err,r){
-        console.log(err,r);
+        console.log('aaa',err,r);
     });
 
     yredis.SET('aa',12,function(err,r){
-        console.log(err,r);
+        console.log('aa',err,r);
     });
     yredis.decrby('aa',-1,function(err,r){
-        console.log(err,r);
+        console.log('aa',err,r);
     });
     yredis.get('aa',function(err,r){
-        console.log(err,r);
+        console.log('aa',err,r);
     });
+
+
 
 
     //console.log(yredis.getServers());
-    console.log(yredis.getMasterServer().name);
+   /* console.log(yredis.getMasterServer().name);
     var slaves= yredis.getSlaveServers()||[];
 
     slaves.forEach(function(slave){
         console.log(slave.name);
-    });
+    });*/
 
+});
+
+var xredis=YRedis.getClient({servers:'172.20.0.47:2181',chroot:'/bidder-redis-failover-qa'});
+xredis.on('ok',function(){
+    xredis.addReadCommands(['get','sinter','mget','hgetall','ttl']).addWriteCommands(['set','incr','incrby','decrby','expire']);
+    xredis.SET('xaa',12,function(err,r){
+        console.log('xaa',err,r);
+    });
+    xredis.get('xaa',function(err,r){
+        console.log('xaa',err,r);
+    });
 });
 
 /*
