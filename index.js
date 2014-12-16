@@ -88,7 +88,7 @@ DSPRedis.prototype._init=function(){
 
     this.manager.on('ok',function(){
 
-        if(this.getServers().length==0)return;
+        if(self.getServers().length==0)return;
         //init rr
         self._initRr();
         //init commands
@@ -141,23 +141,28 @@ DSPRedis.prototype._addReadCommand=function(command){
         } else {
             sendArgs = to_array(arguments);
         }
-        var index = 0;
-        if (!!self.keyDispatcher && typeof self.keyDispatcher == 'function') {
-            index = self.keyDispatcher(this.getServers(), command, sendArgs, sendCallback);
-            if (isNaN(index) || index >= this.getServers().length || index < 0) {
+
+        var index = 0,servers=this.getServers();
+        if (self.keyDispatcher && typeof self.keyDispatcher == 'function') {
+            index = self.keyDispatcher(servers, command, sendArgs, sendCallback);
+            if (isNaN(index) || index >= servers.length || index < 0) {
                 index = 0;
             }
         }
-        var slaves = this.getServers()[index].slaves;
-        var slaveNum = slaves === undefined ? 0 : slaves.length, slave, rr = self.rr[index].slaves;
+
+        var server=servers[index];
+        var slaves = server.slaves,master=server.master;
+
+        var slaveNum = slaves === undefined ? 0 : slaves.length, slave;
         if (slaveNum > 0) {
+            var rr = self.rr[index].slaves;
             rr = (rr + 1) % slaveNum;
-            slave = this.getServers()[index].slaves[rr];
+            slave = slaves[rr];
         } else {
-            slave = this.getServers()[index].master;
+            slave = master;
         }
 
-        if (!!sendCallback) {
+        if (sendCallback) {
             slave.send_command(command, sendArgs, sendCallback);
         } else {
             slave.send_command(command, sendArgs);
@@ -184,17 +189,17 @@ DSPRedis.prototype._addWriteCommand = function (command) {
         } else {
             sendArgs = to_array(arguments);
         }
-        var index = 0;
-        if (!!self.keyDispatcher && typeof self.keyDispatcher == 'function') {
-            index = self.keyDispatcher(this.getServers(), command, sendArgs, sendCallback);
-            if (isNaN(index) || index >= this.getServers().length || index < 0) {
+        var index = 0,servers=this.getServers();
+        if (self.keyDispatcher && typeof self.keyDispatcher == 'function') {
+            index = self.keyDispatcher(servers, command, sendArgs, sendCallback);
+            if (isNaN(index) || index >= servers.length || index < 0) {
                 index = 0;
             }
         }
 
-        var master = this.getServers()[index].master;
+        var master = servers[index].master;
 
-        if (!!sendCallback) {
+        if (sendCallback) {
             master.send_command(command, sendArgs, sendCallback);
         } else {
             master.send_command(command, sendArgs);
