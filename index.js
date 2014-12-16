@@ -120,7 +120,7 @@ DSPRedis.prototype._init=function(){
 DSPRedis.prototype._initRr=function(){
     var serversNum=this.getServers().length;
     for(var i=0;i<serversNum;i++){
-        this.rr[i]={slaves:0};
+        this.rr[i]=0;
     }
 };
 
@@ -153,11 +153,13 @@ DSPRedis.prototype._addReadCommand=function(command){
         var server=servers[index];
         var slaves = server.slaves,master=server.master;
 
-        var slaveNum = slaves === undefined ? 0 : slaves.length, slave;
+        var slaveNum = slaves === undefined ? 0 : slaves.length,slave,rr = self.rr[index];
         if (slaveNum > 0) {
-            var rr = self.rr[index].slaves;
-            rr = (rr + 1) % slaveNum;
-            slave = slaves[rr];
+            var rrv=rr.slaves;
+            rrv = (rrv + 1) % slaveNum;
+            rr.slaves=rrv;
+
+            slave = slaves[rrv];
         } else {
             slave = master;
         }
