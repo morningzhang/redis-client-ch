@@ -153,11 +153,11 @@ DSPRedis.prototype._addReadCommand=function(command){
         var server=servers[index];
         var slaves = server.slaves,master=server.master;
 
-        var slaveNum = slaves === undefined ? 0 : slaves.length,slave,rr = self.rr[index];
+        var slaveNum = slaves === undefined ? 0 : slaves.length,slave;
         if (slaveNum > 0) {
-            var rrv=rr.slaves;
+            var rrv = self.rr[index];
             rrv = (rrv + 1) % slaveNum;
-            rr.slaves=rrv;
+            self.rr[index]=rrv;
 
             slave = slaves[rrv];
         } else {
